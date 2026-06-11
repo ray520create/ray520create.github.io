@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏐 1A2B 排球挑戰賽</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:"Microsoft JhengHei",sans-serif;
+    min-height:100vh;
+    background:
+    linear-gradient(rgba(0,0,0,.65),rgba(0,0,0,.8)),
+    url("https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1600&q=80");
+    background-size:cover;
+    background-position:center;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+    color:white;
+}
+
+.container{
+    width:800px;
+    max-width:95%;
+    background:rgba(20,20,20,.85);
+    backdrop-filter:blur(5px);
+    border:3px solid #ff7b00;
+    border-radius:20px;
+    padding:30px;
+    box-shadow:
+        0 0 20px #ff7b00,
+        0 0 50px rgba(255,123,0,.4);
+    position:relative;
+}
+
+.ball{
+    position:absolute;
+    right:20px;
+    top:15px;
+    font-size:55px;
+    animation:spin 5s linear infinite;
+}
+
+@keyframes spin{
+    from{transform:rotate(0deg);}
+    to{transform:rotate(360deg);}
+}
+
+h1{
+    text-align:center;
+    color:#ff8800;
+    font-size:3rem;
+    margin-bottom:10px;
+    text-shadow:
+        0 0 10px #ff8800,
+        0 0 20px #ff8800;
+}
+
+.subtitle{
+    text-align:center;
+    color:#ddd;
+    margin-bottom:25px;
+    font-size:18px;
+}
+
+.input-area{
+    text-align:center;
+}
+
+input{
+    width:220px;
+    padding:12px;
+    font-size:24px;
+    border:none;
+    border-radius:10px;
+    text-align:center;
+    outline:none;
+}
+
+button{
+    padding:12px 25px;
+    margin:10px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:18px;
+    font-weight:bold;
+    transition:.3s;
+}
+
+.guess-btn{
+    background:#ff8800;
+    color:white;
+}
+
+.guess-btn:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 20px #ff8800;
+}
+
+.reset-btn{
+    background:#444;
+    color:white;
+}
+
+.reset-btn:hover{
+    background:#666;
+}
+
+.message{
+    text-align:center;
+    margin-top:20px;
+    min-height:50px;
+    font-size:24px;
+    font-weight:bold;
+}
+
+.win{
+    color:#00ff9d;
+    text-shadow:
+        0 0 10px #00ff9d,
+        0 0 20px #00ff9d;
+    animation:flash .8s infinite;
+}
+
+@keyframes flash{
+    50%{
+        opacity:.4;
+    }
+}
+
+.info{
+    display:flex;
+    justify-content:space-around;
+    margin-top:20px;
+    text-align:center;
+}
+
+.card{
+    background:rgba(255,255,255,.08);
+    border-radius:10px;
+    padding:10px 20px;
+    min-width:120px;
+}
+
+.card-title{
+    color:#ff8800;
+    font-size:14px;
+}
+
+.card-value{
+    font-size:22px;
+    font-weight:bold;
+}
+
+table{
+    width:100%;
+    margin-top:25px;
+    border-collapse:collapse;
+}
+
+th{
+    background:#ff8800;
+    padding:12px;
+}
+
+td{
+    padding:12px;
+    text-align:center;
+    border-bottom:1px solid rgba(255,255,255,.15);
+}
+
+tr:hover{
+    background:rgba(255,255,255,.05);
+}
+
+.footer{
+    text-align:center;
+    margin-top:20px;
+    color:#aaa;
+    font-size:14px;
+}
+
+@media(max-width:600px){
+
+    h1{
+        font-size:2rem;
+    }
+
+    .ball{
+        font-size:40px;
+    }
+
+    input{
+        width:180px;
+    }
+
+    .info{
+        flex-direction:column;
+        gap:10px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="ball">🏐</div>
+
+<h1>1A2B 排球挑戰賽</h1>
+
+<div class="subtitle">
+突破對手防線，找出神秘號碼！
+</div>
+
+<div class="input-area">
+
+<input
+    id="guessInput"
+    maxlength="4"
+    placeholder="輸入4位數">
+
+<br>
+
+<button class="guess-btn" onclick="guessNumber()">
+🔥 扣殺！
+</button>
+
+<button class="reset-btn" onclick="newGame()">
+🔄 重新開賽
+</button>
+
+</div>
+
+<div id="message" class="message"></div>
+
+<div class="info">
+
+<div class="card">
+<div class="card-title">目前回合</div>
+<div id="roundCount" class="card-value">0</div>
+</div>
+
+<div class="card">
+<div class="card-title">最佳結果</div>
+<div id="bestResult" class="card-value">-</div>
+</div>
+
+</div>
+
+<table>
+
+<thead>
+<tr>
+<th>回合</th>
+<th>猜測數字</th>
+<th>結果</th>
+</tr>
+</thead>
+
+<tbody id="history"></tbody>
+
+</table>
+
+<div class="footer">
+🏐 熱血猜數字挑戰賽
+</div>
+
+</div>
+
+<script>
+
+let answer="";
+let round=0;
+let bestA=0;
+
+function createAnswer(){
+
+    let nums=['0','1','2','3','4','5','6','7','8','9'];
+    let result='';
+
+    for(let i=0;i<4;i++){
+
+        let index=Math.floor(Math.random()*nums.length);
+
+        result+=nums[index];
+
+        nums.splice(index,1);
+    }
+
+    return result;
+}
+
+function newGame(){
+
+    answer=createAnswer();
+
+    round=0;
+    bestA=0;
+
+    document.getElementById("history").innerHTML="";
+    document.getElementById("message").innerHTML="";
+    document.getElementById("guessInput").value="";
+    document.getElementById("roundCount").textContent="0";
+    document.getElementById("bestResult").textContent="-";
+
+    console.log("答案:",answer);
+}
+
+function isValid(num){
+
+    if(!/^\d{4}$/.test(num))
+        return false;
+
+    return new Set(num).size===4;
+}
+
+function guessNumber(){
+
+    let guess=document
+        .getElementById("guessInput")
+        .value
+        .trim();
+
+    if(!isValid(guess)){
+
+        document.getElementById("message").innerHTML=
+        "⚠️ 請輸入4位不重複數字";
+
+        return;
+    }
+
+    let A=0;
+    let B=0;
+
+    for(let i=0;i<4;i++){
+
+        if(guess[i]===answer[i]){
+
+            A++;
+
+        }else if(answer.includes(guess[i])){
+
+            B++;
+        }
+    }
+
+    round++;
+
+    if(A>bestA){
+        bestA=A;
+    }
+
+    document.getElementById("roundCount")
+        .textContent=round;
+
+    document.getElementById("bestResult")
+        .textContent=bestA+"A";
+
+    let row=document.createElement("tr");
+
+    row.innerHTML=`
+        <td>${round}</td>
+        <td>${guess}</td>
+        <td>${A}A${B}B</td>
+    `;
+
+    document
+        .getElementById("history")
+        .appendChild(row);
+
+    if(A===4){
+
+        document.getElementById("message").innerHTML=
+        `<span class="win">
+        🏆 WINNER!! 完美扣殺成功！<br>
+        共挑戰 ${round} 回合
+        </span>`;
+
+    }else{
+
+        document.getElementById("message").innerHTML=
+        `第 ${round} 回合：${A}A${B}B`;
+    }
+
+    document.getElementById("guessInput").value="";
+    document.getElementById("guessInput").focus();
+}
+
+document
+.getElementById("guessInput")
+.addEventListener("keypress",function(e){
+
+    if(e.key==="Enter"){
+        guessNumber();
+    }
+
+});
+
+newGame();
+
+</script>
+
+</body>
+</html>
