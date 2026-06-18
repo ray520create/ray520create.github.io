@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>互動式狼人殺判定器</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #2c3e50; color: white; text-align: center; padding: 20px; }
+        .setup-section, .game-section { background: #34495e; padding: 20px; border-radius: 10px; max-width: 800px; margin: 0 auto 20px; }
+        .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; margin-top: 20px; }
+        .player-card { background: #ecf0f1; color: #333; padding: 10px; border-radius: 8px; position: relative; cursor: pointer; border: 4px solid transparent; }
+        .player-card.dead { opacity: 0.5; background: #95a5a6; text-decoration: line-through; border-color: #c0392b; }
+        .role-icon { font-size: 40px; display: block; margin-bottom: 5px; }
+        .role-selector button { font-size: 12px; margin: 2px; cursor: pointer; }
+        .controls { margin-top: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; }
+        .btn-primary { background: #27ae60; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        #log { background: #000; color: #00ff00; padding: 10px; text-align: left; height: 100px; overflow-y: auto; font-family: monospace; margin-top: 10px; }
+        .result-display { font-size: 24px; font-weight: bold; margin-top: 20px; padding: 15px; border-radius: 5px; display: none; }
+        .werewolves-win { background: #c0392b; }
+        .townsfolk-win { background: #2980b9; }
+        .wrong-msg { background: #f39c12; }
+    </style>
+</head>
+<body>
+
+    <h1>🐺 狼人殺勝負判定系統</h1>
+
+    <!-- 設定階段 -->
+    <div class="setup-section" id="setupSection">
+        <h3>1. 設定玩家人數 (6-18人)</h3>
+        <input type="number" id="playerCount" value="6" min="6" max="18" style="padding: 5px;">
+        <button class="btn-primary" onclick="initPlayers()">生成玩家卡片</button>
+        
+        <div class="player-grid" id="setupGrid"></div>
+        <div class="controls">
+            <button class="btn-primary" id="startGameBtn" style="display:none;" onclick="startGame()">正式開始遊戲</button>
+        </div>
+    </div>
+
+    <!-- 遊戲進行階段 -->
+    <div class="game-section" id="gameSection" style="display:none;">
+        <h3>2. 遊戲進行中：點擊玩家頭像進行淘汰</h3>
+        <p>（依照來源規則：點擊已死亡玩家將觸發 Wrong）</p>
+        <div class="player-grid" id="gameGrid"></div>
+        
+        <div id="log">遊戲日誌：等待行動...</div>
+        
+        <div class="controls">
+            <button class="btn-danger" onclick="finishGame()">結束遊戲 (輸入 0)</button>
+        </div>
+        
+        <div id="resultDisplay" class="result-display"></div>
+    </div>
+
+    <script>
+        let players = [];
+        let eliminationLog = [];
+        let isGameOver = false;
+
+        // 圖案定義
+        const icons = {
+            "-1": "🐺", // 狼人
+            "0": "👤",  // 平民
+            "1": "🧙"   // 神職
+        };
+
+        function initPlayers() {
+            const n = parseInt(document.getElementById('playerCount').value);
+            if (n < 6 || n > 18) {
+                alert("人數必須在 6 到 18 之間 [1]");
+                return;
+            }
+
+            players = [];
+            const grid = document.getElementById('setupGrid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= n; i++) {
+                players.push({ id: i, role: 0, isAlive: true });
+                grid.innerHTML += `
+                    <div class="player-card">
+                        <strong>玩家 ${i}</strong>
+                        <span id="icon-${i}" class="role-icon">${icons}</span>
+                        <div class="role-selector">
+                            <button onclick="setRole(${i}, -1)">狼人</button>
+                            <button onclick="setRole(${i}, 0)">平民</button>
+                            <button onclick="setRole(${i}, 1)">神職</button>
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('startGameBtn').style.display = 'inline-block';
+        }
+
+        function setRole(id, role) {
+            players[id-1].role = role;
+            document.getElementById(`icon-${id}`).innerText = icons[role];
+        }
+
+        function startGame() {
+            document.getElementById('setupSection').style.display = 'none';
+            document.getElementById('gameSection').style.display = 'block';
+            renderGameGrid();
+        }
+
+        function renderGameGrid() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            players.forEach(p => {
+                grid.innerHTML += `
+                    <div class="player-card ${p.isAlive ? '' : 'dead'}" onclick="eliminate(${p.id})">
+                        <strong>玩家 ${p.id}</strong>
+                        <span class="role-icon">${icons[p.role]}</span>
+                        <small>${p.isAlive ? '存活' : '已淘汰'}</small>
+                    </div>
+                `;
+            });
+        }
+
+        function eliminate(id) {
+            if (isGameOver) return;
+            
+            const logBox = document.getElementById('log');
+            const p = players[id-1];
+
+            if (!p.isAlive) {
+                // 來源規則：已淘汰玩家再次被淘汰輸出 Wrong [1]
+                showFinalResult("Wrong");
+                isGameOver = true;
+                return;
+            }
+
+            p.isAlive = false;
+            eliminationLog.push(id);
+            logBox.innerHTML += `玩家 ${id} 被淘汰<br>`;
+            logBox.scrollTop = logBox.scrollHeight;
+            renderGameGrid();
+        }
+
+        function finishGame() {
+            if (isGameOver) return;
+            
+            // 來源規則：判定是否還有狼人 (-1) 存活 [1]
+            const werewolfAlive = players.some(p => p.role === -1 && p.isAlive);
+            
+            if (werewolfAlive) {
+                showFinalResult("Werewolves");
+            } else {
+                showFinalResult("Townsfolk");
+            }
+            isGameOver = true;
+        }
+
+        function showFinalResult(msg) {
+            const resDiv = document.getElementById('resultDisplay');
+            resDiv.style.display = 'block';
+            resDiv.innerText = "最終結果：" + msg;
+            
+            if (msg === "Werewolves") resDiv.className = "result-display werewolves-win";
+            else if (msg === "Townsfolk") resDiv.className = "result-display townsfolk-win";
+            else resDiv.className = "result-display wrong-msg";
+        }
+    </script>
+</body>
+</html>
